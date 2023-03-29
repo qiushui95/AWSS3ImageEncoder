@@ -1,3 +1,5 @@
+package org.example
+
 sealed class ImageType {
     object OriginImage : ImageType()
     object EncodeImage : ImageType()

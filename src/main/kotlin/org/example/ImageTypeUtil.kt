@@ -1,3 +1,5 @@
+package org.example
+
 object ImageTypeUtil {
 
     fun getImageType(readCount: Int, buffer: ByteArray): ImageType {
