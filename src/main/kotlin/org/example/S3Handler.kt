@@ -25,7 +25,9 @@ class S3Handler : RequestHandler<S3Event, Unit> {
         val srcBucket = record.s3.bucket.name
         val srcKey = record.s3.`object`.urlDecodedKey
 
-        context.logger.log("当前处理文件:s3://${srcBucket}/${srcKey}")
+        val s3Key = "s3://${srcBucket}/${srcKey}"
+
+        context.logger.log("当前处理文件:$s3Key")
 
         val s3Client = S3Client.builder()
             .build()
@@ -37,12 +39,12 @@ class S3Handler : RequestHandler<S3Event, Unit> {
 
         when (getImageType(s3Client, getObjectRequest)) {
             ImageType.EncodeImage -> {
-                context.logger.log("s3://${srcBucket}/${srcKey}已被加密,跳过此次处理")
+                context.logger.log("${s3Key}已被加密,跳过此次处理")
                 return
             }
 
             ImageType.None -> {
-                context.logger.log("s3://${srcBucket}/${srcKey}不是图片格式,跳过此次处理")
+                context.logger.log("${s3Key}不是图片格式,跳过此次处理")
                 return
             }
 
@@ -55,6 +57,8 @@ class S3Handler : RequestHandler<S3Event, Unit> {
         dstFile.parentFile.mkdirs()
 
         dstFile.createNewFile()
+
+        context.logger.log("开始下载${s3Key}")
 
         s3Client.getObject(getObjectRequest).use { input ->
             dstFile.outputStream().use { output ->
@@ -76,6 +80,8 @@ class S3Handler : RequestHandler<S3Event, Unit> {
             }
         }
 
+        context.logger.log("开始上传${s3Key}")
+
         val putObjectRequest = PutObjectRequest.builder()
             .bucket(srcBucket)
             .key(srcKey)
@@ -83,7 +89,7 @@ class S3Handler : RequestHandler<S3Event, Unit> {
 
         s3Client.putObject(putObjectRequest, RequestBody.fromFile(dstFile))
 
-        context.logger.log("s3://${srcBucket}/${srcKey}加密完成")
+        context.logger.log("${s3Key}加密完成")
     }
 
     private fun getImageType(s3Client: S3Client, request: GetObjectRequest): ImageType {
